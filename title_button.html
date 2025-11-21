@@ -1,0 +1,15 @@
+<label style="--left-label-position: 0px;" event flex>
+    <div class="label-container interior-label"> flex
+        <span class="input-boundary-box"> flex
+            <slot name="leadingIcon"></slot> contents
+            <span class=" input-container "> flex
+                <span id="fp-input-label" class="label-text inner-label">...</span>
+                <div class="text-area-wrapper" style="--textarea-minheight: 20px;"> flex
+                    <textarea id="innerTextArea" class="" aria-labelledby="fp-input-label" name="title" maxlength="300" required="" style="height: 20px;"></textarea> event
+                </div>
+            </span>
+        </span>
+        <span id="trailing-icons-container">...</span> flex
+        </span>
+    </div>
+</label>

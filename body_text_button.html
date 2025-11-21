@@ -1,0 +1,47 @@
+</div>
+<confirmation-modal title="Switch to markdown?" message="You'll lose any images, gifs, or videos you've added." confirm-text="Yes, Switch" aria-hidden="true">...</confirmation-modal> custom...
+    <span slot="placeholder:html">Body text (optional)</span>
+    <div class="max-h-[calc(100vh-var(--shreddit-header-height)-6.25rem)] px-e resize-y overflow-y-auto min-h-[7rem] leading-5 box-border" slot="rte" aria-label="Post body text field" name="body" contenteditable="true" role="textbox" tabindex="1" aria-placeholder="Body text (optional)" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">event
+        <p class="first:mt-0 last:mb-0" dir="auto"></p>
+    </div>
+    <data slot="rte" value="config" data-key="actionBar" data-show-left-action-bar="false" data-show-right-action-bar="false"></data>
+    <rte-toolbar-button-image class="" slot="rte-toolbar-additions" ignore-focus="">...</rte-toolbar-button-image> custom...
+    <rte-toolbar-button-video class="" slot="rte-toolbar-additions" ignore-focus="">...</rte-toolbar-button-video>
+
+    <fieldset class="p-0 m-0 bg-transparent border-0">
+        <shreddit-composer id="post-composer_bodyText" class="block w-full nd:hidden text-16" name="body" mode="richText" event-source="post_composer" placeholder="Body text (optional)" size="large" data-persistent="" aria-required="false" aria-disabled="false">event custom...
+            #shadow-root (open)
+            <div class="border border-solid rounded-5 bg-neutral-background border-neutral-border focus-within:border-neutral-border-medium">
+                <slot name="preamble"></slot> contents
+                <reddit-rte class="flex flex-col" slot="rteComposer" placeholder="Body text (optional)" size="large" aria-disabled="false">event flex custom...
+                    #shadow-root (open)
+                    <div class="order-2 relative"></div>
+                    <rte-toolbar class="toolbar-top-responsive order-1" role="toolbar" aria-orientation="horizontal" aria-label="text formatting toolbar" style="">event custom...
+                        #shadow-root (open)
+                        <div class="px-xs py-2xs">
+                            <div class="flex toolbar w-full max-w-full"> flex
+                                <div class="rte-toolbar-fixed ms-auto gap-2xs flex flex-nowrap flex-row-reverse grow-0 order-2">
+
+
+                                    <div class="border border-solid rounded-5 bg-neutral-background border-neutral-border focus-within:border-neutral-border-medium">
+                                        <slot name="preamble"></slot> contents
+                                        <reddit-rte class="flex flex-col" slot="rteComposer" placeholder="Body text (optional)" size="large" aria-disabled="false">event flex custom...
+                                            #shadow-root (open)
+                                            <div class="order-2 relative">
+                                                <p class="absolute inset-0 m-0 px-md py-sm leading-5 text-neutral-content-weak flex items-baseline" aria-hidden="true"> flex
+                                                    <slot name="placeholder:html"> contents
+                                                        <slot>
+                                                            Body text (optional)
+                                                        </slot>
+                                                    </slot>
+                                                </p>
+                                                <slot> contents
+                                                    <slot>
+                                                    </slot>
+                                                </slot>
+                                            </div>
+                                        </reddit-rte>
+                                    </div>
+
+
+

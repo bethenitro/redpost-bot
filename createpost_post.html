@@ -1,0 +1,25 @@
+<r-post-form-submit-button id="submit-post-button" post-action-type="submit" custom...>
+
+    #shadow-root (open)
+  
+    <button id="inner-post-submit-button" class="ml-auto button-medium px-[var(--rem14)] button-primary items-center justify-center inline-flex" rpl="type=button" event="inline-flex">
+  
+      <span class="flex items-center justify-center">
+  
+        <span class="flex items-center gap-xs">
+  
+          </span>
+  
+        </span>
+  
+    </button>
+  
+  </r-post-form-submit-button>
+  
+  <r-post-form-submit-button id="save-draft-button" post-action-type="draft" custom...>
+  
+    </r-post-form-submit-button>
+  
+  <confirmation-modal id="media-loss-draft-save-modal" title="Save Draft?" message="Drafts do not save images and videos." confirm-text="Yes" aria-hidden="true"></confirmation-modal>
+  
+  <confirmation-modal id="save-draft-failed-modal" title="Unable to save draft" message="You already have 20 drafts. Delete a draft to save this one." confirm-text="Manage Drafts" aria-hidden="true"></confirmation-modal>

@@ -1,0 +1,27 @@
+<div id="fileInputInnerWrapper"
+    class="flex w-full flex border-sm rounded-md overflow-hidden group min-h-[min(20vw,150px)] border-neutral-border border-dashed">
+    event flex
+    <div class="w-full flex items-center justify-center"> flex
+        <div id="inputInfo" class="flex flex-row gap-xs items-center"> flex
+            Drag and Drop or upload media
+            <button id="device-upload-button"
+                class="upload-media action button-small px-[var(--rem6)] button-secondary icon items-center justify-center button inline-flex "
+                rpl="" type="button"> flex
+                <span class="flex items-center justify-center"> flex
+                    <span class="flex"> flex
+                        <svg rpl="" fill="currentColor" height="16" icon-name="upload" viewBox="0 0 20 20" width="16"
+                            xmlns="http://www.w3.org/2000/svg"></svg>
+                    </span>
+                </span>
+                <faceplate-screen-reader-content>custom...
+                    #shadow-root (open)
+                    <slot> contents
+                        #text
+                    </slot>
+                    Upload files
+                </faceplate-screen-reader-content>
+            </button>
+        </div>
+    </div>
+</div>
+</r-post-media-input>

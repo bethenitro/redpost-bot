@@ -1,0 +1,89 @@
+<div slot="dropdown-icon" class="flex items-center"><span
+        class="inline-flex items-center justify-center w-[1.5rem] h-[1.5rem] " rpl="" avatar="">
+
+        <span
+            class="inline-flex snoovatar relative  fp-avatar-container rounded-full w-[1.5rem] h-[1.5rem] min-w-[1.5rem] min-h-[1.5rem] isolate box-content">
+            <span style="" class="rounded-full absolute h-full w-full inline-flex justify-center ">
+                <span
+                    class="relative rounded-full overflow-hidden  inline-flex w-full h-full box-border [&amp;&gt;:first-child]:rounded-[inherit] overflow-hidden"><svg
+                        rpl="" fill="currentColor" height="24" icon-name="community-fill" viewBox="0 0 20 20" width="24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M11.977 13.79h-1.955l4.549-10.715a.81.81 0 00-.381-1.032C12.447 1.12 10.37.747 8.179 1.18c-3.612.716-6.471 3.68-7.059 7.316a9.01 9.01 0 0010.409 10.377c3.735-.616 6.741-3.635 7.347-7.371.453-2.8-.388-5.405-2.017-7.322a.505.505 0 00-.853.119l-4.029 9.49zM9.98 8.118a1.752 1.752 0 00-1.148.167 1.664 1.664 0 00-.651.596 1.703 1.703 0 00-.258.948v3.96H5.998V6.322h1.876v1.074h.035c.251-.344.567-.628.948-.851a2.55 2.55 0 011.311-.335c.172 0 .335.014.488.042.153.028.267.058.342.09l-.774 1.849a.766.766 0 00-.244-.073z">
+                        </path>
+                    </svg>
+                </span>
+            </span>
+
+        </span></span></div>
+<faceplate-loader name="WhereToPost_rYDLdr" src="concat:iK74ej12,RvMpS7un,CVrtgXnT,BeUJdvLj,CrKBZYrj,gRsCSRmx"
+    loading="lazy" data-prefix="en-US/"><!----></faceplate-loader>
+<faceplate-partial name="WhereToPost_rYDLdr"
+    src="/svc/shreddit/partial/rYDLdr/where-to-post?data=%7B%7D&amp;query=%7B%22type%22%3A%22TEXT%22%7D&amp;sig=v1.6qTPObSq0JXz-qLIu3K970AxI2ZmGH77IcisA3Q31k0"
+    loading="lazy">
+    <div style="min-height: 1px; min-width: 1px; margin-bottom: -1px;"></div>
+</faceplate-partial>
+
+<community-prefixed-name id="post-submit-community-picker" class="nd:hidden"
+    value="selected-community-prefixed-name">event custom...</community-prefixed-name>
+#shadow-root (open)
+<div class="relative inline-block">
+    <faceplate-tracker action="click" noun="subreddit_selector" source="post_composer">event custom...
+        <button id="dropdown-button"
+            class=" button-medium px-[var(--rem10)] button-secondary items-center justify-center button inline-flex rpl="" type="
+            button">event inline-flex
+            <span class="flex items-center justify-center">...</span> flex
+            <svg class="ml-xs" rpl="" fill="currentColor" height="20" icon-name="caret-down" viewBox="0 0 20 20"
+                width="20" xmlns="http://www.w3.org/2000/svg"></svg>
+        </button>
+    </faceplate-tracker>
+
+    // button after being clicked on it -
+
+    <button id="dropdown-button"
+        class="hidden button-medium px-[var(--rem10)] button-secondary items-center justify-center button inline-flex rpl="" type="
+        button">event</button>
+
+
+    <faceplate-search-input id="search-input" class="m-0 min-w-[20rem] hidden" placeholder="Search" autocomplete="off"
+        inputmode="" novalidate="" appearance="secondary" placeholder="Select a community" value=""
+        aria-disabled="false" helper-text-aria-live="polite" faceplate-validity="valid">event custom...
+        #shadow-root (open)
+        <label style="--left-label-position: 0px;" flex>
+            <div class="label-container without-label "> flex
+                <span class="leadingIcon">...</span> flex
+                <slot name="chips"></slot>event contents
+                <span class="input-container activated">...</span> flex
+                <span class="clear-icon-container">
+                </span>
+                <span class="trailing-content-container ">...</span> flex
+            </div>
+        </label>
+        <button id="search-input-clear-button"
+            class="button-small px-[var(--rem6)] button-plain icon items-center justify-center button inline-flex "
+            rpl="" slot="clearIcon" type="button">...</button>
+    </faceplate-search-input>
+    <faceplate-dropdown-menu class="ml-md connected">...</faceplate-dropdown-menu> flex custom...
+</div>
+
+
+<faceplate-search-input id="search-input" class="m-0 min-w-[20rem] " type="search" autocomplete="off" inputmode=""
+    novalidate="" appearance="secondary" placeholder="Select a community" value="" aria-disabled="false"
+    helper-text-aria-live="polite" faceplate-validity="valid">event inline-flex custom...
+    #shadow-root (open)
+    <label style="--left-label-position: 0px;" flex>
+        <div class="label-container without-label "> flex
+            <span class="leadingIcon">...</span> flex
+            <slot name="chips"></slot>event contents
+            <span class="input-container activated stateful-input">...</span> flex
+            <span class="clear-icon-container">
+            </span>
+            <span class="trailing-content-container ">...</span> flex
+        </div>
+    </label>
+    <button id="search-input-clear-button"
+        class="button-small px-[var(--rem6)] button-plain icon items-center justify-center button inline-flex " rpl=""
+        slot="clearIcon" type="button">...</button>
+</faceplate-search-input>
+<faceplate-dropdown-menu class="ml-md connected">...</faceplate-dropdown-menu> flex custom...
+</div>

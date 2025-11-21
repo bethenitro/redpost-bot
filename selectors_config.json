@@ -1,0 +1,133 @@
+{
+  "reddit_selectors": {
+    "title_input": [
+      "textarea[name=\"title\"]",
+      "#innerTextArea",
+      "textarea[aria-labelledby=\"fp-input-label\"]",
+      "textarea[placeholder*=\"title\"]"
+    ],
+    "text_body": [
+      "div[aria-label=\"Post body text field\"][contenteditable=\"true\"][role=\"textbox\"]",
+      "shreddit-composer[name=\"body\"] div[contenteditable=\"true\"]",
+      "reddit-rte div[contenteditable=\"true\"][role=\"textbox\"]",
+      "div[data-lexical-editor=\"true\"][contenteditable=\"true\"]",
+      "div[aria-placeholder*=\"Body text\"][contenteditable=\"true\"]",
+      "div[data-testid=\"rtjson-text-editor\"]",
+      ".public-DraftEditor-content",
+      "textarea[name=\"text\"]",
+      ".notranslate.public-DraftEditor-content",
+      "[contenteditable=\"true\"][role=\"textbox\"]"
+    ],
+    "upload_buttons": [
+      "#device-upload-button",
+      "button.upload-media",
+      "button:has-text(\"Upload\")",
+      "button[class*=\"upload\"]",
+      "r-post-media-input button"
+    ],
+    "file_inputs": [
+      "input[type=\"file\"][accept*=\"image\"]",
+      "input[data-media-type=\"image\"]",
+      "input.file-input",
+      "r-post-media-input input[type=\"file\"]",
+      "input[type=\"file\"]",
+      "input[accept*=\"image\"]",
+      "input[accept*=\"video\"]",
+      "input[multiple]"
+    ],
+    "nsfw_checkbox": [
+      "input[name=\"nsfw\"]",
+      "faceplate-checkbox[name=\"nsfw\"] input",
+      "input[type=\"checkbox\"][id*=\"nsfw\"]",
+      "faceplate-switch-input[name=\"isNsfw\"]",
+      "faceplate-switch-input[name=\"nsfw\"]"
+    ],
+    "flair_dropdown_button": [
+      "#reddit-post-flair-button",
+      "button[id*=\"flair\"]",
+      "button[aria-label*=\"flair\"]",
+      "faceplate-tracker[noun=\"flair_dropdown\"] button"
+    ],
+    "nsfw_switch": [
+      "faceplate-switch-input[name=\"isNsfw\"]",
+      "faceplate-switch-input[name=\"nsfw\"]"
+    ],
+    "modal_submit": [
+      "#post-flair-modal-apply-button",
+      "button.apply",
+      "button:has-text(\"Add\")",
+      "faceplate-form button[type=\"submit\"]",
+      "button:has-text(\"Apply\")",
+      "button:has-text(\"Save\")",
+      "button:has-text(\"Done\")"
+    ],
+    "spoiler_checkbox": [
+      "input[name=\"spoiler\"]",
+      "faceplate-checkbox[name=\"spoiler\"] input",
+      "input[type=\"checkbox\"][id*=\"spoiler\"]"
+    ],
+    "submit_buttons": [
+      "button:has-text(\"Post\")",
+      "button.submit",
+      "faceplate-button[type=\"submit\"]",
+      "button[class*=\"submit\"]"
+    ],
+    "success_indicators": [
+      "img[src*=\"preview\"]",
+      "img[src*=\"redd.it\"]",
+      ".upload-success",
+      "[class*=\"uploaded\"]",
+      "[class*=\"preview\"]",
+      "[data-testid*=\"preview\"]"
+    ],
+    "drop_zones": [
+      "#fileInputInnerWrapper",
+      "r-post-media-input",
+      ".upload-media",
+      "[class*=\"drag\"]",
+      "[class*=\"drop\"]"
+    ],
+    "subreddit_selector": [
+      "faceplate-search-input[placeholder*=\"community\"]",
+      "input[placeholder*=\"Choose a community\"]",
+      "faceplate-typeahead-input",
+      "[data-testid=\"subreddit-picker-input\"]"
+    ],
+    "post_type_buttons": {
+      "text": [
+        "button[data-name=\"TEXT\"]",
+        "button:has-text(\"Text\")",
+        "[aria-label*=\"Text\"]"
+      ],
+      "image": [
+        "button[data-name=\"IMAGE\"]",
+        "button:has-text(\"Images & Video\")",
+        "[aria-label*=\"Images\"]"
+      ],
+      "link": [
+        "button[data-name=\"LINK\"]",
+        "button:has-text(\"Link\")",
+        "[aria-label*=\"Link\"]"
+      ]
+    }
+  },
+  "timeouts": {
+    "page_load": 30000,
+    "element_wait": 10000,
+    "file_chooser_wait": 5000,
+    "upload_completion": 8000,
+    "submit_wait": 10000
+  },
+  "delays": {
+    "typing_min": 0.1,
+    "typing_max": 0.3,
+    "scroll_min": 2,
+    "scroll_max": 8,
+    "random_min": 1,
+    "random_max": 3,
+    "post_upload_min": 3,
+    "post_upload_max": 8,
+    "pre_submit_min": 2,
+    "pre_submit_max": 4
+  }
+}
