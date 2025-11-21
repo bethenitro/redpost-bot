@@ -6,6 +6,7 @@ Core Reddit posting functionality
 import asyncio
 import random
 import logging
+import os
 from datetime import datetime
 from typing import Any
 
@@ -163,48 +164,43 @@ class RedditPosterCore:
                         logger.error("Failed to fill body text with any selector")
                         raise Exception("Could not find or fill body text field")
                 elif post_data.post_type == "image" and post_data.content:
-                    logger.debug(f"Starting image upload process for: {post_data.content}")
+                    # Handle multiple images
+                    image_paths = post_data.image_paths
+                    if not image_paths:
+                        logger.error("No image paths found in post data")
+                        raise Exception("No image paths found")
                     
-                    # Use the helper method to upload the image
-                    upload_success = await self.reddit_actions._upload_image_file(page, post_data.content)
+                    logger.info(f"Starting image upload process for {len(image_paths)} image(s)")
                     
-                    if not upload_success:
-                        logger.error("Failed to upload image with any method")
-                        raise Exception("Could not upload image file")
-                    
-                    # Wait for upload to complete and verify
-                    logger.debug("Waiting for image upload to complete...")
-                    await self.reddit_actions._random_delay(delay_type="post_upload")
-                    
-                    # Try to verify upload success by looking for upload indicators
-                    try:
-                        # Look for success indicators
-                        success_indicators = [
-                            'img[src*="preview"]',
-                            'img[src*="redd.it"]',
-                            '.upload-success',
-                            '[class*="uploaded"]',
-                            '[class*="preview"]',
-                            '[data-testid*="preview"]'
-                        ]
+                    # Upload each image
+                    upload_success_count = 0
+                    for i, image_path in enumerate(image_paths, 1):
+                        logger.debug(f"Uploading image {i}/{len(image_paths)}: {image_path}")
                         
-                        upload_verified = False
-                        for indicator in success_indicators:
-                            try:
-                                await page.wait_for_selector(indicator, timeout=3000)
-                                logger.info(f"Upload verification successful - found indicator: {indicator}")
-                                upload_verified = True
-                                break
-                            except:
-                                continue
+                        # Use the helper method to upload the image
+                        # First image uses regular upload button, subsequent images use "add more" button
+                        is_first_image = (i == 1)
+                        upload_success = await self.reddit_actions._upload_image_file(page, image_path, is_first_image)
                         
-                        if not upload_verified:
-                            logger.warning("Could not verify upload success with visual indicators, but upload method reported success")
-                                
-                    except Exception as e:
-                        logger.debug(f"Could not verify upload success: {e}")
+                        if upload_success:
+                            upload_success_count += 1
+                            logger.info(f"Successfully uploaded image {i}/{len(image_paths)}: {os.path.basename(image_path)}")
+                            
+                            # Wait between uploads to avoid overwhelming the server
+                            if i < len(image_paths):  # Don't wait after the last image
+                                logger.debug(f"Waiting before uploading next image ({i+1}/{len(image_paths)})...")
+                                await self.reddit_actions._random_delay(delay_type="between_uploads")
+                        else:
+                            logger.warning(f"Failed to upload image {i}/{len(image_paths)}: {os.path.basename(image_path)}")
+                            # Still continue with remaining images
                     
-                    logger.info("Image upload process completed successfully")
+                    if upload_success_count == 0:
+                        logger.error("Failed to upload any images")
+                        raise Exception("Could not upload any image files")
+                    elif upload_success_count < len(image_paths):
+                        logger.warning(f"Only uploaded {upload_success_count}/{len(image_paths)} images successfully")
+                    
+                    logger.info(f"Image upload process completed successfully - {upload_success_count}/{len(image_paths)} images uploaded")
                 else:
                     logger.debug("No content to add or content is empty")
                 

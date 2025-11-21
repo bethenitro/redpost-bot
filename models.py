@@ -13,7 +13,7 @@ class PostData:
     """Data structure for a Reddit post"""
     subreddit: str
     title: str
-    content: str = ""  # Text content or image path
+    content: str = ""  # Text content or image path(s) - for images, can be semicolon-separated paths
     post_type: str = "text"  # "text" or "image"
     nsfw: bool = False
     account_name: str = ""
@@ -22,6 +22,19 @@ class PostData:
     error_message: str = ""
     use_proxy: bool = True  # Whether to use proxy for this post
     headless: bool = True  # Whether to run browser in headless mode
+    
+    @property
+    def image_paths(self) -> List[str]:
+        """Get list of image paths for image posts"""
+        if self.post_type == "image" and self.content:
+            return [path.strip() for path in self.content.split(';') if path.strip()]
+        return []
+    
+    @image_paths.setter
+    def image_paths(self, paths: List[str]):
+        """Set image paths for image posts"""
+        if self.post_type == "image":
+            self.content = ';'.join(paths)
 
 
 @dataclass

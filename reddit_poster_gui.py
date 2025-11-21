@@ -8,6 +8,7 @@ from tkinter import ttk, filedialog, messagebox
 from datetime import datetime, timedelta
 import asyncio
 import threading
+import os
 from pathlib import Path
 import json
 import requests
@@ -31,8 +32,9 @@ class RedditPosterGUI:
         self.login_future = None
         self.account_thread = None
         
-        # Track active context menus for proper cleanup
+        # Track active context menus and tooltips for proper cleanup
         self.active_menus = []
+        self.active_tooltips = []
         
         self.setup_ui()
         self.setup_global_bindings()
@@ -72,13 +74,13 @@ class RedditPosterGUI:
         # Hide menus when switching tabs
         self.root.bind("<<NotebookTabChanged>>", self.hide_all_menus)
         
-        # Hide menus on key press
-        self.root.bind("<Key>", self.hide_all_menus)
+        # Hide menus and tooltips on key press
+        self.root.bind("<Key>", lambda e: (self.hide_all_menus(), self.hide_all_tooltips()))
         
         # Add keyboard shortcuts
         self.root.bind("<Control-r>", lambda e: self.refresh_current_tab())
         self.root.bind("<F5>", lambda e: self.refresh_current_tab())
-        self.root.bind("<Escape>", self.hide_all_menus)
+        self.root.bind("<Escape>", lambda e: (self.hide_all_menus(), self.hide_all_tooltips()))
         
     def on_global_click(self, event):
         """Handle global clicks to hide menus when appropriate"""
@@ -86,6 +88,8 @@ class RedditPosterGUI:
         widget = event.widget
         if not isinstance(widget, ttk.Treeview):
             self.hide_all_menus()
+        # Always hide tooltips on any click
+        self.hide_all_tooltips()
         
     def hide_all_menus(self, event=None):
         """Hide all active context menus"""
@@ -95,6 +99,43 @@ class RedditPosterGUI:
             except:
                 pass
         self.active_menus.clear()
+        
+    def hide_all_tooltips(self):
+        """Hide all active tooltips"""
+        # Hide all tooltips using the new robust system
+        if hasattr(self, 'active_tooltips'):
+            # Make a copy of the list to avoid modification during iteration
+            tooltips_to_hide = self.active_tooltips.copy()
+            for tooltip in tooltips_to_hide:
+                try:
+                    tooltip.hide_tooltip()
+                except:
+                    pass
+            self.active_tooltips.clear()
+        
+        # Also clean up any old-style tooltips that might still exist
+        def hide_old_tooltips_recursive(widget):
+            if hasattr(widget, 'tooltip'):
+                try:
+                    widget.tooltip.destroy()
+                    del widget.tooltip
+                except:
+                    pass
+            
+            if hasattr(widget, '_tooltips'):
+                for tooltip in widget._tooltips:
+                    try:
+                        tooltip.hide_tooltip()
+                    except:
+                        pass
+            
+            try:
+                for child in widget.winfo_children():
+                    hide_old_tooltips_recursive(child)
+            except:
+                pass
+        
+        hide_old_tooltips_recursive(self.root)
         
     def safe_hide_menu(self, menu):
         """Safely hide a specific menu"""
@@ -123,6 +164,7 @@ class RedditPosterGUI:
     def on_tab_changed(self, event=None):
         """Handle notebook tab change"""
         self.hide_all_menus()
+        self.hide_all_tooltips()  # Hide any visible tooltips when switching tabs
         
         # Refresh data when switching to certain tabs
         try:
@@ -329,10 +371,30 @@ class RedditPosterGUI:
         
         # Image content
         self.image_frame = ttk.Frame(self.content_frame)
-        self.image_path_var = tk.StringVar()
-        self.image_entry = ttk.Entry(self.image_frame, textvariable=self.image_path_var, width=50)
-        self.image_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(self.image_frame, text="Browse", command=self.browse_image).pack(side=tk.RIGHT, padx=(5, 0))
+        
+        # Image list display
+        self.image_list_frame = ttk.Frame(self.image_frame)
+        self.image_list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        
+        # Listbox to show selected images
+        self.image_listbox = tk.Listbox(self.image_list_frame, height=4, selectmode=tk.EXTENDED)
+        self.image_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Scrollbar for image list
+        image_scrollbar = ttk.Scrollbar(self.image_list_frame, orient=tk.VERTICAL, command=self.image_listbox.yview)
+        self.image_listbox.configure(yscrollcommand=image_scrollbar.set)
+        image_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Image control buttons
+        self.image_buttons_frame = ttk.Frame(self.image_frame)
+        self.image_buttons_frame.pack(fill=tk.X)
+        
+        ttk.Button(self.image_buttons_frame, text="Add Images", command=self.browse_images).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(self.image_buttons_frame, text="Remove Selected", command=self.remove_selected_images).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(self.image_buttons_frame, text="Clear All", command=self.clear_all_images).pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Store image paths
+        self.selected_image_paths = []
         
         # Row 4 - Browser Options
         ttk.Label(add_frame, text="Browser:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
@@ -689,17 +751,59 @@ class RedditPosterGUI:
                 if isinstance(widget, ttk.Entry):
                     widget.configure(state=tk.DISABLED)
 
-    def browse_image(self):
-        """Browse for image file"""
-        filename = filedialog.askopenfilename(
-            title="Select Image",
+    def browse_images(self):
+        """Browse for multiple image files"""
+        filenames = filedialog.askopenfilenames(
+            title="Select Images",
             filetypes=[
                 ("Image files", "*.jpg *.jpeg *.png *.gif *.webp"),
                 ("All files", "*.*")
             ]
         )
-        if filename:
-            self.image_path_var.set(filename)
+        if filenames:
+            # Add new images to the list, avoiding duplicates
+            for filename in filenames:
+                if filename not in self.selected_image_paths:
+                    self.selected_image_paths.append(filename)
+            self.update_image_listbox()
+    
+    def remove_selected_images(self):
+        """Remove selected images from the list"""
+        selected_indices = self.image_listbox.curselection()
+        if not selected_indices:
+            messagebox.showinfo("Info", "Please select images to remove")
+            return
+        
+        # Remove in reverse order to maintain indices
+        for index in reversed(selected_indices):
+            del self.selected_image_paths[index]
+        
+        self.update_image_listbox()
+    
+    def clear_all_images(self):
+        """Clear all selected images"""
+        self.selected_image_paths.clear()
+        self.update_image_listbox()
+    
+    def update_image_listbox(self):
+        """Update the image listbox display"""
+        self.image_listbox.delete(0, tk.END)
+        for i, path in enumerate(self.selected_image_paths, 1):
+            # Show just the filename with index for better readability
+            filename = os.path.basename(path)
+            self.image_listbox.insert(tk.END, f"{i}. {filename}")
+        
+        # Update tooltip with full paths
+        if self.selected_image_paths:
+            tooltip_text = f"Selected {len(self.selected_image_paths)} images:\n" + "\n".join([f"{i}. {path}" for i, path in enumerate(self.selected_image_paths, 1)])
+            try:
+                self.create_tooltip(self.image_listbox, tooltip_text)
+            except:
+                pass  # Tooltip creation might fail, but it's not critical
+    
+    def browse_image(self):
+        """Legacy method for backward compatibility - now calls browse_images"""
+        self.browse_images()
 
     def add_account(self):
         """Add a new account"""
@@ -898,10 +1002,23 @@ class RedditPosterGUI:
         if post_type == "text":
             content = self.text_content.get("1.0", tk.END).strip()
         else:
-            content = self.image_path_var.get().strip()
-            if content and not Path(content).exists():
-                messagebox.showerror("Error", "Image file not found")
+            # Handle multiple images
+            if not self.selected_image_paths:
+                messagebox.showerror("Error", "Please select at least one image")
                 return
+            
+            # Verify all image files exist
+            missing_files = []
+            for path in self.selected_image_paths:
+                if not Path(path).exists():
+                    missing_files.append(os.path.basename(path))
+            
+            if missing_files:
+                messagebox.showerror("Error", f"Image files not found: {', '.join(missing_files)}")
+                return
+            
+            # Join paths with semicolon separator
+            content = ';'.join(self.selected_image_paths)
         
         # Get scheduled time
         scheduled_time = None
@@ -937,7 +1054,7 @@ class RedditPosterGUI:
         self.subreddit_entry.delete(0, tk.END)
         self.title_entry.delete(0, tk.END)
         self.text_content.delete("1.0", tk.END)
-        self.image_path_var.set("")
+        self.clear_all_images()
         self.nsfw_var.set(False)
         self.use_proxy_for_post_var.set(True)
         self.headless_for_post_var.set(True)
@@ -959,10 +1076,23 @@ class RedditPosterGUI:
         if post_type == "text":
             content = self.text_content.get("1.0", tk.END).strip()
         else:
-            content = self.image_path_var.get().strip()
-            if content and not Path(content).exists():
-                messagebox.showerror("Error", "Image file not found")
+            # Handle multiple images
+            if not self.selected_image_paths:
+                messagebox.showerror("Error", "Please select at least one image")
                 return
+            
+            # Verify all image files exist
+            missing_files = []
+            for path in self.selected_image_paths:
+                if not Path(path).exists():
+                    missing_files.append(os.path.basename(path))
+            
+            if missing_files:
+                messagebox.showerror("Error", f"Image files not found: {', '.join(missing_files)}")
+                return
+            
+            # Join paths with semicolon separator
+            content = ';'.join(self.selected_image_paths)
         
         headless = self.headless_for_post_var.get()
         
@@ -1046,7 +1176,12 @@ class RedditPosterGUI:
             self.text_content.delete("1.0", tk.END)
             self.text_content.insert("1.0", post.content)
         else:
-            self.image_path_var.set(post.content)
+            # Handle multiple images
+            self.clear_all_images()
+            if post.content:
+                image_paths = [path.strip() for path in post.content.split(';') if path.strip()]
+                self.selected_image_paths = image_paths
+                self.update_image_listbox()
             
         self.nsfw_var.set(post.nsfw)
         
@@ -1202,25 +1337,128 @@ class RedditPosterGUI:
             messagebox.showerror("Error", f"Failed to reschedule posts: {e}")
             
     def create_tooltip(self, widget, text):
-        """Create a tooltip for a widget"""
-        def on_enter(event):
-            tooltip = tk.Toplevel()
-            tooltip.wm_overrideredirect(True)
-            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
-            
-            label = tk.Label(tooltip, text=text, background="lightyellow", 
-                           relief="solid", borderwidth=1, font=("Segoe UI", 8))
-            label.pack()
-            
-            widget.tooltip = tooltip
-            
-        def on_leave(event):
-            if hasattr(widget, 'tooltip'):
-                widget.tooltip.destroy()
-                del widget.tooltip
+        """Create a robust tooltip for a widget"""
+        # Initialize tooltip tracking if not exists
+        if not hasattr(self, 'active_tooltips'):
+            self.active_tooltips = []
+        
+        class ToolTip:
+            def __init__(self, widget, text, parent_gui):
+                self.widget = widget
+                self.text = text
+                self.parent_gui = parent_gui
+                self.tooltip_window = None
+                self.show_timer = None
+                self.hide_timer = None
                 
-        widget.bind("<Enter>", on_enter)
-        widget.bind("<Leave>", on_leave)
+                # Bind events
+                self.widget.bind("<Enter>", self.on_enter, add="+")
+                self.widget.bind("<Leave>", self.on_leave, add="+")
+                self.widget.bind("<Button-1>", self.hide_tooltip, add="+")
+                self.widget.bind("<Key>", self.hide_tooltip, add="+")
+                
+            def on_enter(self, event=None):
+                # Cancel any pending hide timer
+                if self.hide_timer:
+                    self.widget.after_cancel(self.hide_timer)
+                    self.hide_timer = None
+                
+                # Schedule tooltip to show after a short delay
+                if not self.tooltip_window:
+                    self.show_timer = self.widget.after(500, lambda: self.show_tooltip(event))
+                
+            def on_leave(self, event=None):
+                # Cancel show timer if tooltip hasn't appeared yet
+                if self.show_timer:
+                    self.widget.after_cancel(self.show_timer)
+                    self.show_timer = None
+                
+                # Schedule tooltip to hide after a short delay
+                if self.tooltip_window:
+                    self.hide_timer = self.widget.after(100, self.hide_tooltip)
+                
+            def show_tooltip(self, event=None):
+                if self.tooltip_window:
+                    return
+                
+                try:
+                    # Get widget position
+                    x = self.widget.winfo_rootx() + 20
+                    y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+                    
+                    # Create tooltip window
+                    self.tooltip_window = tk.Toplevel(self.widget)
+                    self.tooltip_window.wm_overrideredirect(True)
+                    self.tooltip_window.wm_geometry(f"+{x}+{y}")
+                    
+                    # Make tooltip stay on top but not steal focus
+                    self.tooltip_window.attributes('-topmost', True)
+                    
+                    # Create label with text
+                    label = tk.Label(
+                        self.tooltip_window, 
+                        text=self.text, 
+                        background="lightyellow",
+                        foreground="black",
+                        relief="solid", 
+                        borderwidth=1, 
+                        font=("Segoe UI", 8),
+                        padx=4,
+                        pady=2
+                    )
+                    label.pack()
+                    
+                    # Add to active tooltips list
+                    if self in self.parent_gui.active_tooltips:
+                        self.parent_gui.active_tooltips.remove(self)
+                    self.parent_gui.active_tooltips.append(self)
+                    
+                    # Bind tooltip window events
+                    self.tooltip_window.bind("<Enter>", self.on_tooltip_enter)
+                    self.tooltip_window.bind("<Leave>", self.on_tooltip_leave)
+                    
+                except Exception:
+                    # If tooltip creation fails, clean up
+                    self.hide_tooltip()
+                
+            def on_tooltip_enter(self, event=None):
+                # Cancel hide timer if mouse enters tooltip
+                if self.hide_timer:
+                    self.widget.after_cancel(self.hide_timer)
+                    self.hide_timer = None
+                    
+            def on_tooltip_leave(self, event=None):
+                # Hide tooltip when mouse leaves tooltip window
+                self.hide_tooltip()
+                
+            def hide_tooltip(self, event=None):
+                # Cancel any pending timers
+                if self.show_timer:
+                    self.widget.after_cancel(self.show_timer)
+                    self.show_timer = None
+                if self.hide_timer:
+                    self.widget.after_cancel(self.hide_timer)
+                    self.hide_timer = None
+                
+                # Destroy tooltip window
+                if self.tooltip_window:
+                    try:
+                        self.tooltip_window.destroy()
+                    except:
+                        pass
+                    self.tooltip_window = None
+                    
+                # Remove from active tooltips list
+                if self in self.parent_gui.active_tooltips:
+                    self.parent_gui.active_tooltips.remove(self)
+        
+        # Create and store tooltip instance
+        tooltip_instance = ToolTip(widget, text, self)
+        
+        # Store reference to tooltip on widget for cleanup
+        if not hasattr(widget, '_tooltips'):
+            widget._tooltips = []
+        widget._tooltips.append(tooltip_instance)
         
     def setup_status_bar(self):
         """Setup status bar at the bottom of the window"""
@@ -1532,8 +1770,14 @@ class RedditPosterGUI:
                     # Truncate title if too long
                     display_title = post.title[:30] + "..." if len(post.title) > 30 else post.title
                     
+                    # Show image count for image posts
+                    post_type_display = post.post_type
+                    if post.post_type == "image" and post.content:
+                        image_count = len(post.image_paths)
+                        post_type_display = f"image ({image_count})"
+                    
                     self.posts_tree.insert("", tk.END, values=(
-                        post.subreddit, display_title, post.post_type, 
+                        post.subreddit, display_title, post_type_display, 
                         post.account_name, proxy_status, headless_status, post.status, scheduled
                     ))
                 except Exception as e:

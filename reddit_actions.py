@@ -64,21 +64,32 @@ class RedditActions:
             logger.error(f"Failed to type text '{text}' into selector '{selector}': {e}")
             raise
 
-    async def _upload_image_file(self, page: Any, image_path: str) -> bool:
+    async def _upload_image_file(self, page: Any, image_path: str, is_first_image: bool = True) -> bool:
         """Helper method to handle image file uploads with file dialog automation"""
         # Verify image file exists
         if not os.path.exists(image_path):
             logger.error(f"Image file not found: {image_path}")
             return False
         
-        logger.info(f"Attempting to upload image: {image_path}")
+        logger.info(f"Attempting to upload image: {image_path} (first: {is_first_image})")
+        
+        # Choose the right button selectors based on whether this is the first image or additional
+        if is_first_image:
+            button_selectors = self.selector_config.get_selectors("upload_buttons")
+        else:
+            # For additional images, we need to hover over the image area first to make the button visible
+            await self._hover_to_reveal_add_more_button(page)
+            
+            # Then look for "Add more images" button
+            button_selectors = self.selector_config.get_selectors("add_more_images_buttons")
+            # Fallback to regular upload buttons if add more buttons not found
+            if not button_selectors:
+                button_selectors = self.selector_config.get_selectors("upload_buttons")
         
         # Strategy 1: Use file chooser event to handle file dialog automatically
-        upload_button_selectors = self.selector_config.get_selectors("upload_buttons")
-        
-        for button_selector in upload_button_selectors:
+        for button_selector in button_selectors:
             try:
-                logger.debug(f"Looking for upload button: {button_selector}")
+                logger.debug(f"Looking for {'upload' if is_first_image else 'add more images'} button: {button_selector}")
                 
                 # Wait for the button to be available
                 timeout = self.selector_config.get_timeout("element_wait")
@@ -86,7 +97,7 @@ class RedditActions:
                 if not button:
                     continue
                     
-                logger.debug(f"Found upload button: {button_selector}")
+                logger.debug(f"Found {'upload' if is_first_image else 'add more images'} button: {button_selector}")
                 
                 # Set up file chooser event handler BEFORE clicking the button
                 async def handle_file_chooser(file_chooser):
@@ -99,9 +110,9 @@ class RedditActions:
                 
                 try:
                     # Click the upload button to trigger file dialog
-                    logger.debug(f"Clicking upload button: {button_selector}")
+                    logger.debug(f"Clicking {'upload' if is_first_image else 'add more images'} button: {button_selector}")
                     await button.click()
-                    logger.debug(f"Clicked upload button, waiting for file chooser or upload completion...")
+                    logger.debug(f"Clicked button, waiting for file chooser or upload completion...")
                     
                     # Wait a bit for the file chooser to appear and be handled (with fluctuations)
                     file_chooser_timeout = self.selector_config.get_timeout("file_chooser_wait")
@@ -110,28 +121,23 @@ class RedditActions:
                     delay = base_delay * fluctuation
                     await asyncio.sleep(delay)
                     
-                    # Check if upload was successful by looking for upload indicators
-                    success_indicators = self.selector_config.get_selectors("success_indicators")
+                    # Wait for upload to complete by looking for completion indicators
+                    upload_completed = await self._wait_for_upload_completion(page)
                     
-                    for indicator in success_indicators:
-                        try:
-                            element = await page.query_selector(indicator)
-                            if element:
-                                logger.info(f"Upload success confirmed with indicator: {indicator}")
-                                return True
-                        except:
-                            continue
-                    
-                    # If no visual indicators, assume success if no errors occurred
-                    logger.info(f"File chooser handled successfully for button: {button_selector}")
-                    return True
+                    if upload_completed:
+                        logger.info(f"Upload completed successfully for button: {button_selector}")
+                        return True
+                    else:
+                        logger.warning(f"Upload may not have completed properly for button: {button_selector}")
+                        # Still return True as the file chooser was handled
+                        return True
                     
                 finally:
                     # Remove the event listener
                     page.remove_listener("filechooser", handle_file_chooser)
                         
             except Exception as e:
-                logger.debug(f"Upload button {button_selector} failed: {e}")
+                logger.debug(f"{'Upload' if is_first_image else 'Add more images'} button {button_selector} failed: {e}")
                 continue
         
         # Strategy 2: Try direct file input approach (fallback)
@@ -212,6 +218,128 @@ class RedditActions:
             logger.debug(f"Drag and drop approach failed: {e}")
         
         logger.error("All image upload strategies failed")
+        return False
+
+    async def _hover_to_reveal_add_more_button(self, page: Any) -> bool:
+        """Hover over the image area multiple times to reveal the 'Add more images' button"""
+        logger.debug("Attempting to hover over image area multiple times to reveal 'Add more images' button")
+        
+        hover_area_selectors = self.selector_config.get_selectors("image_hover_areas")
+        
+        for hover_selector in hover_area_selectors:
+            try:
+                logger.debug(f"Looking for hover area: {hover_selector}")
+                timeout = self.selector_config.get_timeout("element_wait")
+                hover_element = await page.wait_for_selector(hover_selector, timeout=timeout)
+                
+                if hover_element:
+                    logger.debug(f"Found hover area: {hover_selector}, hovering multiple times...")
+                    
+                    # Hover 2-3 times randomly as suggested
+                    hover_count = random.randint(2, 3)
+                    logger.debug(f"Will hover {hover_count} times")
+                    
+                    for i in range(hover_count):
+                        logger.debug(f"Hover attempt {i+1}/{hover_count}")
+                        await hover_element.hover()
+                        
+                        # Wait between hovers
+                        await self._random_delay(delay_type="hover_reveal")
+                        
+                        # Check if the add more button is now visible after each hover
+                        add_more_selectors = self.selector_config.get_selectors("add_more_images_buttons")
+                        for button_selector in add_more_selectors:
+                            try:
+                                button = await page.query_selector(button_selector)
+                                if button:
+                                    # Check if button is visible
+                                    is_visible = await button.is_visible()
+                                    if is_visible:
+                                        logger.info(f"Successfully revealed 'Add more images' button after {i+1} hover(s) over {hover_selector}")
+                                        return True
+                            except:
+                                continue
+                    
+                    logger.debug(f"Hovered {hover_count} times over {hover_selector} but button not visible, trying next selector")
+                    
+            except Exception as e:
+                logger.debug(f"Hover area {hover_selector} failed: {e}")
+                continue
+        
+        # Fallback: Try to force visibility using JavaScript
+        logger.debug("Trying JavaScript fallback to make 'Add more images' button visible")
+        try:
+            # Try to remove the 'invisible' class and add 'visible' class to buttons
+            await page.evaluate("""
+                // Find buttons that might be the "add more images" button
+                const buttons = document.querySelectorAll('button[class*="add-media"], button[class*="invisible"], faceplate-toolbar-action button');
+                buttons.forEach(button => {
+                    // Remove invisible classes
+                    button.classList.remove('invisible');
+                    button.classList.remove('opacity-0');
+                    button.classList.remove('hidden');
+                    
+                    // Add visible classes
+                    button.classList.add('visible');
+                    button.classList.add('opacity-100');
+                    
+                    // Set inline styles to ensure visibility
+                    button.style.visibility = 'visible';
+                    button.style.opacity = '1';
+                    button.style.display = 'inline-flex';
+                });
+                
+                // Also try to trigger hover state on parent containers
+                const containers = document.querySelectorAll('div.group, #fileInputInnerWrapper');
+                containers.forEach(container => {
+                    container.classList.add('hover');
+                });
+            """)
+            
+            # Wait a moment for changes to take effect
+            await self._random_delay(delay_type="hover_reveal")
+            
+            # Check if any add more button is now visible
+            add_more_selectors = self.selector_config.get_selectors("add_more_images_buttons")
+            for button_selector in add_more_selectors:
+                try:
+                    button = await page.query_selector(button_selector)
+                    if button:
+                        is_visible = await button.is_visible()
+                        if is_visible:
+                            logger.info(f"Successfully made 'Add more images' button visible using JavaScript fallback")
+                            return True
+                except:
+                    continue
+                    
+        except Exception as e:
+            logger.debug(f"JavaScript fallback failed: {e}")
+        
+        logger.warning("Could not reveal 'Add more images' button by hovering or JavaScript fallback")
+        return False
+
+    async def _wait_for_upload_completion(self, page: Any) -> bool:
+        """Wait for image upload to complete by looking for completion indicators"""
+        logger.debug("Waiting for image upload to complete...")
+        
+        completion_indicators = self.selector_config.get_selectors("upload_completion_indicators")
+        timeout = self.selector_config.get_timeout("upload_completion")
+        
+        for indicator in completion_indicators:
+            try:
+                logger.debug(f"Waiting for upload completion indicator: {indicator}")
+                await page.wait_for_selector(indicator, timeout=timeout)
+                logger.info(f"Upload completion confirmed with indicator: {indicator}")
+                
+                # Additional wait to ensure the upload is fully processed
+                await self._random_delay(delay_type="post_upload")
+                return True
+                
+            except Exception as e:
+                logger.debug(f"Upload completion indicator {indicator} not found: {e}")
+                continue
+        
+        logger.warning("Could not confirm upload completion with any indicator")
         return False
 
     async def _mark_post_nsfw(self, page: Any) -> bool:

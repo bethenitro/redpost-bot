@@ -25,6 +25,28 @@
       "button[class*=\"upload\"]",
       "r-post-media-input button"
     ],
+    "add_more_images_buttons": [
+      "faceplate-toolbar-action[noun=\"add_more_images\"] button",
+      "button.add-media",
+      "button:has-text(\"Add images\")",
+      "button[class*=\"add-media\"]",
+      "faceplate-toolbar-action button[class*=\"add-media\"]",
+      "button.add-media.action.invisible.group-hover\\:visible",
+      "button[class*=\"group-hover:visible\"]",
+      "div.absolute button[class*=\"add-media\"]"
+    ],
+    "image_hover_areas": [
+      "#fileInputInnerWrapper",
+      "div.group",
+      "faceplate-carousel",
+      "div[class*=\"group\"]",
+      ".image-preview-container",
+      "div.w-full.relative.flex.rounded-md.overflow-hidden",
+      "div[class*=\"border-sm\"][class*=\"group\"]",
+      "r-post-media-input #fileInputInnerWrapper",
+      "r-post-media-input faceplate-carousel",
+      "div.flex.w-full.border-sm.rounded-md.overflow-hidden.group"
+    ],
     "file_inputs": [
       "input[type=\"file\"][accept*=\"image\"]",
       "input[data-media-type=\"image\"]",
@@ -78,7 +100,15 @@
       ".upload-success",
       "[class*=\"uploaded\"]",
       "[class*=\"preview\"]",
-      "[data-testid*=\"preview\"]"
+      "[data-testid*=\"preview\"]",
+      "faceplate-carousel",
+      "r-post-media-input faceplate-carousel"
+    ],
+    "upload_completion_indicators": [
+      "faceplate-carousel",
+      "r-post-media-input faceplate-carousel",
+      "#fileInputInnerWrapper faceplate-carousel",
+      "div.w-full.relative.flex.rounded-md.overflow-hidden faceplate-carousel"
     ],
     "drop_zones": [
       "#fileInputInnerWrapper",
@@ -115,7 +145,7 @@
     "page_load": 30000,
     "element_wait": 10000,
     "file_chooser_wait": 5000,
-    "upload_completion": 8000,
+    "upload_completion": 15000,
     "submit_wait": 10000
   },
   "delays": {
@@ -128,6 +158,12 @@
     "post_upload_min": 3,
     "post_upload_max": 8,
     "pre_submit_min": 2,
-    "pre_submit_max": 4
+    "pre_submit_max": 4,
+    "between_uploads_min": 1,
+    "between_uploads_max": 3,
+    "post_completion_min": 4,
+    "post_completion_max": 6,
+    "hover_reveal_min": 0.5,
+    "hover_reveal_max": 1.5
   }
 }
