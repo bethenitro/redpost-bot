@@ -1,3 +1,4 @@
 **/env/
 **/__pycache__/
 /data
+reddit_poster.log

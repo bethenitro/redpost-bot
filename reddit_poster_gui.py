@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import json
 import requests
+from copy import deepcopy
 
 from reddit_poster import RedditPoster, PostData
 
@@ -494,6 +495,7 @@ class RedditPosterGUI:
         # Context menu for posts
         self.posts_menu = tk.Menu(self.root, tearoff=0, font=('Segoe UI', 9))
         self.posts_menu.add_command(label="Edit Post", command=self.edit_post)
+        self.posts_menu.add_command(label="Duplicate Post", command=self.duplicate_post)
         self.posts_menu.add_separator()
         self.posts_menu.add_command(label="Delete Post", command=self.delete_post)
         self.posts_tree.bind("<Button-3>", self.show_posts_menu)
@@ -1210,6 +1212,70 @@ class RedditPosterGUI:
         self.notebook.select(1)  # Posts tab is index 1
         
         messagebox.showinfo("Edit Mode", "Post loaded for editing. Make your changes and click 'Add Post' to save.")
+
+    def duplicate_post(self):
+        """Duplicate selected post by prefilling the form"""
+        selection = self.posts_tree.selection()
+        if not selection:
+            return
+        
+        item = selection[0]
+        index = self.posts_tree.index(item)
+        
+        if index >= len(self.poster.posts):
+            return
+            
+        post = self.poster.posts[index]
+        
+        # Clear and fill the form with post data
+        self.subreddit_entry.delete(0, tk.END)
+        self.subreddit_entry.insert(0, post.subreddit)
+        
+        self.title_entry.delete(0, tk.END)
+        self.title_entry.insert(0, post.title)
+        
+        self.post_type_var.set(post.post_type)
+        self.on_post_type_change()
+        
+        if post.post_type == "text":
+            self.text_content.delete("1.0", tk.END)
+            self.text_content.insert("1.0", post.content)
+        else:
+            # Handle multiple images
+            self.clear_all_images()
+            if post.content:
+                image_paths = [path.strip() for path in post.content.split(';') if path.strip()]
+                self.selected_image_paths = image_paths
+                self.update_image_listbox()
+            
+        self.nsfw_var.set(post.nsfw)
+        
+        # Set account
+        if post.account_name:
+            self.account_combo.set(post.account_name)
+            
+        # Set browser options
+        self.use_proxy_for_post_var.set(post.use_proxy)
+        self.headless_for_post_var.set(post.headless)
+            
+        # Set scheduling with adjusted time to avoid conflicts
+        if post.scheduled_time:
+            self.schedule_var.set(True)
+            # Add 1 hour to avoid immediate scheduling conflicts
+            adjusted_time = post.scheduled_time + timedelta(hours=1)
+            self.date_entry.delete(0, tk.END)
+            self.date_entry.insert(0, adjusted_time.strftime("%Y-%m-%d"))
+            self.time_entry.delete(0, tk.END)
+            self.time_entry.insert(0, adjusted_time.strftime("%H:%M"))
+        else:
+            self.schedule_var.set(False)
+            
+        self.on_schedule_change()
+        
+        # Switch to Posts tab
+        self.notebook.select(1)  # Posts tab is index 1
+        
+        messagebox.showinfo("Duplicate", "Post configuration loaded for duplication. Make any changes and click 'Add Post' to create the duplicate.")
 
     def show_posts_menu(self, event):
         """Show context menu for posts"""
