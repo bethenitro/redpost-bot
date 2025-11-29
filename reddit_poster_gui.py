@@ -1279,7 +1279,7 @@ class RedditPosterGUI:
         messagebox.showinfo("Duplicate", "Post configuration loaded for duplication. Make any changes and click 'Add Post' to create the duplicate.")
 
     def duplicate_post_with_gap(self):
-        """Duplicate selected post and add it directly to queue with 10-minute gap"""
+        """Duplicate selected post by prefilling the form with 10-minute gap"""
         selection = self.posts_tree.selection()
         if not selection:
             return
@@ -1290,30 +1290,63 @@ class RedditPosterGUI:
         if index >= len(self.poster.posts):
             return
             
-        original_post = self.poster.posts[index]
+        post = self.poster.posts[index]
         
-        # Create a copy of the post
-        duplicated_post = deepcopy(original_post)
+        # Clear and fill the form with post data
+        self.subreddit_entry.delete(0, tk.END)
+        self.subreddit_entry.insert(0, post.subreddit)
         
-        # Reset status for the duplicate
-        duplicated_post.status = "pending"
-        duplicated_post.error_message = ""
+        self.title_entry.delete(0, tk.END)
+        self.title_entry.insert(0, post.title)
         
-        # Adjust scheduling time
-        if duplicated_post.scheduled_time:
-            # Add 10 minutes to the original scheduled time
-            duplicated_post.scheduled_time = duplicated_post.scheduled_time + timedelta(minutes=10)
+        self.post_type_var.set(post.post_type)
+        self.on_post_type_change()
+        
+        if post.post_type == "text":
+            self.text_content.delete("1.0", tk.END)
+            self.text_content.insert("1.0", post.content)
         else:
-            # If original wasn't scheduled, schedule the duplicate for 10 minutes from now
-            duplicated_post.scheduled_time = datetime.now() + timedelta(minutes=10)
+            # Handle multiple images
+            self.clear_all_images()
+            if post.content:
+                image_paths = [path.strip() for path in post.content.split(';') if path.strip()]
+                self.selected_image_paths = image_paths
+                self.update_image_listbox()
+            
+        self.nsfw_var.set(post.nsfw)
         
-        # Add the duplicated post to the list
-        self.poster.posts.append(duplicated_post)
-        self.poster._save_posts()
-        self.refresh_posts()
+        # Set account
+        if post.account_name:
+            self.account_combo.set(post.account_name)
+            
+        # Set browser options
+        self.use_proxy_for_post_var.set(post.use_proxy)
+        self.headless_for_post_var.set(post.headless)
+            
+        # Set scheduling with 10-minute gap
+        if post.scheduled_time:
+            self.schedule_var.set(True)
+            # Add 10 minutes to the original scheduled time
+            adjusted_time = post.scheduled_time + timedelta(minutes=10)
+            self.date_entry.delete(0, tk.END)
+            self.date_entry.insert(0, adjusted_time.strftime("%Y-%m-%d"))
+            self.time_entry.delete(0, tk.END)
+            self.time_entry.insert(0, adjusted_time.strftime("%H:%M"))
+        else:
+            # If original wasn't scheduled, schedule for 10 minutes from now
+            self.schedule_var.set(True)
+            adjusted_time = datetime.now() + timedelta(minutes=10)
+            self.date_entry.delete(0, tk.END)
+            self.date_entry.insert(0, adjusted_time.strftime("%Y-%m-%d"))
+            self.time_entry.delete(0, tk.END)
+            self.time_entry.insert(0, adjusted_time.strftime("%H:%M"))
+            
+        self.on_schedule_change()
         
-        scheduled_time_str = duplicated_post.scheduled_time.strftime("%Y-%m-%d %H:%M")
-        messagebox.showinfo("Success", f"Post duplicated and scheduled for {scheduled_time_str}")
+        # Switch to Posts tab
+        self.notebook.select(1)  # Posts tab is index 1
+        
+        messagebox.showinfo("Duplicate", "Post configuration loaded with 10-minute gap. Make any changes and click 'Add Post' to create the duplicate.")
 
     def show_posts_menu(self, event):
         """Show context menu for posts"""
