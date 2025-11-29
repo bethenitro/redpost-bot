@@ -496,6 +496,7 @@ class RedditPosterGUI:
         self.posts_menu = tk.Menu(self.root, tearoff=0, font=('Segoe UI', 9))
         self.posts_menu.add_command(label="Edit Post", command=self.edit_post)
         self.posts_menu.add_command(label="Duplicate Post", command=self.duplicate_post)
+        self.posts_menu.add_command(label="Duplicate with 10min Gap", command=self.duplicate_post_with_gap)
         self.posts_menu.add_separator()
         self.posts_menu.add_command(label="Delete Post", command=self.delete_post)
         self.posts_tree.bind("<Button-3>", self.show_posts_menu)
@@ -1276,6 +1277,43 @@ class RedditPosterGUI:
         self.notebook.select(1)  # Posts tab is index 1
         
         messagebox.showinfo("Duplicate", "Post configuration loaded for duplication. Make any changes and click 'Add Post' to create the duplicate.")
+
+    def duplicate_post_with_gap(self):
+        """Duplicate selected post and add it directly to queue with 10-minute gap"""
+        selection = self.posts_tree.selection()
+        if not selection:
+            return
+        
+        item = selection[0]
+        index = self.posts_tree.index(item)
+        
+        if index >= len(self.poster.posts):
+            return
+            
+        original_post = self.poster.posts[index]
+        
+        # Create a copy of the post
+        duplicated_post = deepcopy(original_post)
+        
+        # Reset status for the duplicate
+        duplicated_post.status = "pending"
+        duplicated_post.error_message = ""
+        
+        # Adjust scheduling time
+        if duplicated_post.scheduled_time:
+            # Add 10 minutes to the original scheduled time
+            duplicated_post.scheduled_time = duplicated_post.scheduled_time + timedelta(minutes=10)
+        else:
+            # If original wasn't scheduled, schedule the duplicate for 10 minutes from now
+            duplicated_post.scheduled_time = datetime.now() + timedelta(minutes=10)
+        
+        # Add the duplicated post to the list
+        self.poster.posts.append(duplicated_post)
+        self.poster._save_posts()
+        self.refresh_posts()
+        
+        scheduled_time_str = duplicated_post.scheduled_time.strftime("%Y-%m-%d %H:%M")
+        messagebox.showinfo("Success", f"Post duplicated and scheduled for {scheduled_time_str}")
 
     def show_posts_menu(self, event):
         """Show context menu for posts"""
